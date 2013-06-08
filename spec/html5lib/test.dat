@@ -1,0 +1,22 @@
+#data
+<!doctype html><body>hello<!--X--></body></html>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <body>
+|     "hello"
+|     <!-- X -->
+
+#data
+<!doctype html><head><title>hi</title></head><body>hello<!--X--></body></html>
+#errors
+#document
+| <!DOCTYPE html>
+| <html>
+|   <head>
+|     <title>
+|       "hi"
+|   <body>
+|     "hello"
+|     <!-- X -->

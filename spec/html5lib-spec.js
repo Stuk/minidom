@@ -1,19 +1,36 @@
 /*global describe, it, expect */
 
+var minidom = require("../minidom");
+
 var FS = require("fs");
 var PATH = require("path");
 
 var DATA_DIR = "html5lib";
 var NEW_TEST_HEADING = "data";
+var HEADINGS = { line: true, data: true, error: true, document: true };
 
 describe("html5lib", function () {
 
-    describe("doctype01.dat", function () {
-        var tests = readDat("doctype01.dat");
-        console.log(tests);
+    describe("test.dat", function () {
+        var tests = readDat("test.dat");
+        tests.forEach(function (data) {
+            // If there is a key we don't recognise (e.g. document-fragment),
+            // skip the test
+            if (!Object.keys(data).every(function (key) { return key in HEADINGS; })) {
+                it("skipping test on line " + data.line + " because of unrecognised key");
+            }
+
+            makeIt("line " + data.line, data);
+        });
     });
 
 });
+
+function makeIt(name, data) {
+    it(name, function () {
+        minidom(data.data);
+    });
+}
 
 // adapted directly from html5lib-python
 // https://github.com/html5lib/html5lib-python/blob/96da7f5f8ccfbdbf2fb2e92dff0c310ed7a01bea/html5lib/tests/support.py#L76
