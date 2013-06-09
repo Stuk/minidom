@@ -7,7 +7,7 @@ var PATH = require("path");
 
 var DATA_DIR = "html5lib";
 var NEW_TEST_HEADING = "data";
-var HEADINGS = { line: true, data: true, error: true, document: true };
+var HEADINGS = { line: true, data: true, errors: true, document: true };
 
 describe("html5lib", function () {
 
@@ -17,7 +17,8 @@ describe("html5lib", function () {
             // If there is a key we don't recognise (e.g. document-fragment),
             // skip the test
             if (!Object.keys(data).every(function (key) { return key in HEADINGS; })) {
-                it("skipping test on line " + data.line + " because of unrecognised key");
+                it("skipping test on line " + data.line + " because of unrecognised key ");
+                return;
             }
 
             makeIt("line " + data.line, data);
@@ -28,7 +29,8 @@ describe("html5lib", function () {
 
 function makeIt(name, data) {
     it(name, function () {
-        minidom(data.data);
+        var doc = minidom(data.data);
+        expect(nodeToTestOutput(doc)).toEqual(data.document);
     });
 }
 
@@ -56,7 +58,7 @@ function readDat(filename) {
             key = heading;
             data[key] = "";
         } else if (key) {
-            data[key] += line;
+            data[key] += line + "\n";
         }
     }
 
@@ -73,4 +75,77 @@ function isSectionHeading(line) {
     } else {
         return false;
     }
+}
+
+function _(amount) {
+    return new Array(amount + 1).join("  ");
+}
+function nodeToTestOutput(node, indent, output) {
+    output = output || [],
+    indent = indent || 0;
+
+    var i, len, kids;
+
+    if (node) {
+        switch (node.nodeType) {
+            case node.ELEMENT_NODE:
+                output.push(_(indent) + "<" + node.tagName.toLowerCase() + ">");
+
+                var attrs = node.attributes;
+                // use temporary array because the attributes need to be sorted
+                var tmp = [];
+                for (i = 0, len = attrs.length; i < len; i++) {
+                    tmp.push(_(indent + 1) + name + '="' + attrs[name] + '"');
+                }
+                output.push.apply(output, tmp.sort());
+
+                kids = node.childNodes;
+                for (i = 0, len = kids.length; i < len; i++) {
+                    nodeToTestOutput(kids[i], indent + 1, output);
+                }
+                break;
+            case node.TEXT_NODE:
+                output.push(_(indent) + '"' + node.nodeValue + '"');
+                break;
+            case node.COMMENT_NODE:
+                output.push(_(indent) + '<!--' + node.nodeValue + '-->');
+                break;
+            case node.DOCUMENT_NODE:
+                kids = node.childNodes;
+                for (i = 0, len = kids.length; i < len; i++) {
+                    nodeToTestOutput(kids[i], indent, output);
+                }
+                break;
+            case node.DOCUMENT_TYPE_NODE:
+                output.push(stringifyDoctype(node));
+                break;
+        }
+    }
+    return "| " + output.join("\n| ");
+}
+
+// from dometohtml.js
+function stringifyDoctype (doctype) {
+  if (doctype.ownerDocument && doctype.ownerDocument._fullDT) {
+    return doctype.ownerDocument._fullDT;
+  }
+
+  var dt = '<!DOCTYPE ' + doctype.name;
+  if (doctype.publicId) {
+    // Public ID may never contain double quotes, so this is always safe.
+    dt += ' PUBLIC "' + doctype.publicId + '" ';
+  }
+  if (!doctype.publicId && doctype.systemId) {
+    dt += ' SYSTEM ';
+  }
+  if (doctype.systemId) {
+    // System ID may contain double quotes OR single quotes, not never both.
+    if (doctype.systemId.indexOf('"') > -1) {
+      dt += "'" + doctype.systemId + "'";
+    } else {
+      dt += '"' + doctype.systemId + '"';
+    }
+  }
+  dt += '>';
+  return dt;
 }
