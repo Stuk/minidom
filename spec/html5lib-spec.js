@@ -11,20 +11,23 @@ var HEADINGS = { line: true, data: true, errors: true, document: true };
 
 describe("html5lib", function () {
 
-    describe("test.dat", function () {
-        var tests = readDat("test.dat");
-        tests.forEach(function (data) {
-            // If there is a key we don't recognise (e.g. document-fragment),
-            // skip the test
-            if (!Object.keys(data).every(function (key) { return key in HEADINGS; })) {
-                it("skipping test on line " + data.line + " because of unrecognised key ");
-                return;
-            }
+    var list = walk(PATH.join(__dirname, "html5lib"));
 
-            makeIt("line " + data.line, data);
+    list.forEach(function (name) {
+        describe(name, function () {
+            var tests = readDat(name);
+            tests.forEach(function (data) {
+                // If there is a key we don't recognise (e.g. document-fragment),
+                // skip the test
+                if (!Object.keys(data).every(function (key) { return key in HEADINGS; })) {
+                    it("skipping test on line " + data.line + " because of unrecognised key ");
+                    return;
+                }
+
+                makeIt("line " + data.line, data);
+            });
         });
     });
-
 });
 
 function makeIt(name, data) {
@@ -39,7 +42,7 @@ function makeIt(name, data) {
 function readDat(filename) {
     var tests = [];
 
-    var content = FS.readFileSync(PATH.join(__dirname, DATA_DIR, filename), "utf8");
+    var content = FS.readFileSync(filename, "utf8");
     var lines = content.split("\n");
 
     var data = {line : 1},
@@ -156,4 +159,26 @@ function stringifyDoctype (doctype) {
   }
   dt += '>';
   return dt;
+}
+
+// Inspired by http://stackoverflow.com/a/5827895/100172
+// sure, there are plenty of packages which include this kind of functionality,
+// but I want to keep minidom light on dependencies.
+function walk(dir, result) {
+    result = result || [];
+
+    var list = FS.readdirSync(dir);
+
+    list.forEach(function(file) {
+        file = PATH.join(dir, file);
+
+        var stat = FS.statSync(file);
+        if (stat && stat.isDirectory()) {
+            result.push.apply(result, walk(file));
+        } else {
+            result.push(file);
+        }
+    });
+
+    return result;
 }
