@@ -40,17 +40,19 @@ describe("minidom", function () {
                     doctype + "<html><body>pass</body></html>"
                 );
                 expect(doc.doctype.name).toEqual("html");
-                expect(doc.doctype.toString()).toEqual(doctype);
 
                 expect(doc.children[0].tagName).toEqual("HTML");
                 expect(doc.children[0].children[0].tagName).toEqual("BODY");
                 expect(doc.children[0].children[0].textContent).toEqual("pass");
             });
 
-            it("rejects non-HTML doctypes", function () {
-                expect(function(){
-                    minidom("<!doctype wrong><html><body>pass</body></html>");
-                }).toThrow(new Error("minidom only supports HTML documents, not '!doctype wrong'"));
+            it("adds a parse error for non-HTML doctypes", function () {
+                var doc = minidom("<!doctype wrong><html><body>pass</body></html>");
+                expect(doc.errors).toEqual([{
+                    type: "error",
+                    message: "Quirky doctype",
+                    data: "!doctype wrong"
+                }]);
             });
         });
 

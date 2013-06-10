@@ -103,6 +103,8 @@ Properties marked &#x20E0;&nbsp; are read-only
 
 Made possible with large excerpts from [JSDom](https://github.com/tmpvar/jsdom).
 
+Error messages from [http://html5.validator.nu/](http://html5.validator.nu/).
+
 ## License
 
 MIT license. See LICENSE.md for details.

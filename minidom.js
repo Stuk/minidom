@@ -30,11 +30,16 @@ exports.dom = dom;
 
 function Handler(document) {
     this.document = document;
+
     this._currentElement = document;
+    this._insertionMode = this.INITIAL_MODE;
     this._reset = false;
 }
 
 Handler.prototype = {
+    INITIAL_MODE: 1,
+    BEFORE_HTML_MODE: 2,
+    BEFORE_HEAD_MODE: 3,
 
     onopentag: function (tagName, attributes) {
         // console.log(" open", tagName);
@@ -64,17 +69,21 @@ Handler.prototype = {
     onprocessinginstruction: function (target, data) {
         var node;
         if (target.toLowerCase() === "!doctype") {
-            if (!/!doctype html/i.test(data)) {
-                throw new Error("minidom only supports HTML documents, not '" + data + "'");
+            if (this._insertionMode !== this.INITIAL_MODE) {
+                this.document.raise("error", "Stray doctype", data);
+                return;
             }
-            // We only work in HTML mode, and so no need to actually parse
-            // the doctype. Instead just give the user a way to get the
-            // original doctype back.
-            this.document.doctype.toString = function () { return "<" + data + ">"; };
+            if (!/!doctype html/i.test(data)) {
+                this.document.raise("error", "Quirky doctype", data);
+            }
 
+            // TODO parse doctype
             node = new dom.DocumentType(this.document, "html");
-            // FIXME should be first element in the document
-            this._currentElement.appendChild(node);
+            this.document.appendChild(node);
+
+            this.document.doctype = node;
+
+            this._insertionMode = this.BEFORE_HTML_MODE;
         } else {
             node = this.document.createProcessingInstruction(target, data);
             this._currentElement.appendChild(node);
