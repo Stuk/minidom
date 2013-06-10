@@ -59,6 +59,7 @@ Handler.prototype = {
     },
 
     onprocessinginstruction: function (target, data) {
+        var node;
         if (target.toLowerCase() === "!doctype") {
             if (!/!doctype html/i.test(data)) {
                 throw new Error("minidom only supports HTML documents, not '" + data + "'");
@@ -67,8 +68,12 @@ Handler.prototype = {
             // the doctype. Instead just give the user a way to get the
             // original doctype back.
             this.document.doctype.toString = function () { return "<" + data + ">"; };
+
+            node = new dom.DocumentType(this.document, "html");
+            // FIXME should be first element in the document
+            this._currentElement.appendChild(node);
         } else {
-            var node = this.document.createProcessingInstruction(target, data);
+            node = this.document.createProcessingInstruction(target, data);
             this._currentElement.appendChild(node);
         }
     },
