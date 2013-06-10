@@ -37,6 +37,7 @@ function Handler(document) {
 Handler.prototype = {
 
     onopentag: function (tagName, attributes) {
+        // console.log(" open", tagName);
         var el = this.document.createElement(tagName);
 
         for (var name in attributes) {
@@ -50,7 +51,9 @@ Handler.prototype = {
     },
 
     onclosetag: function (tagName) {
+        // console.log("close", tagName);
         this._currentElement = this._currentElement.parentNode;
+        // console.log("pNode", this._currentElement.tagName);
     },
 
     ontext: function (text) {
