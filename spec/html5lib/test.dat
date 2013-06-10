@@ -9,7 +9,7 @@
 |     <!-- X -->
 
 #data
-<!doctype html><head><title>hi</title></head><body>hello<!--X--></body></html>
+<!doctype html><html><head><title>hi</title></head><body>hello<!--X--></body></html>
 #errors
 #document
 | <!DOCTYPE html>
