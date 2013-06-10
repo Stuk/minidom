@@ -1,5 +1,5 @@
 #data
-<!doctype html><body>hello<!--X--></body></html>
+<!doctype html><html><body>hello<!--X--></body></html>
 #errors
 #document
 | <!DOCTYPE html>

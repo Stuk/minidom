@@ -30,7 +30,7 @@ describe("html5lib", function () {
 function makeIt(name, data) {
     it(name, function () {
         var doc = minidom(data.data);
-        expect(nodeToTestOutput(doc)).toEqual(data.document);
+        expect(nodeToTestOutput(doc)).toEqual(data.document.trim());
     });
 }
 
@@ -52,7 +52,9 @@ function readDat(filename) {
             if (data.data && heading === NEW_TEST_HEADING) {
                 // Don't need to remove trailing newline because .split()
                 // does not keep the separator in the string
-                tests.push(data);
+                // Remove trailing newline
+                data[key] = data[key].substring(0, data[key].length - 1);
+                tests.push(normaliseOutput(data));
                 data = {line: i + 1};
             }
             key = heading;
@@ -63,7 +65,7 @@ function readDat(filename) {
     }
 
     if (data.data) {
-        tests.push(data);
+        tests.push(normaliseOutput(data));
     }
 
     return tests;
@@ -75,6 +77,16 @@ function isSectionHeading(line) {
     } else {
         return false;
     }
+}
+
+function normaliseOutput(data) {
+    Object.keys(data).forEach(function (key) {
+        var value = data[key];
+        if (typeof value === "string" && value.charAt(value.length - 1) === "\n") {
+            data[key] = value.substring(0, value.length - 1);
+        }
+    });
+    return data;
 }
 
 function _(amount) {
@@ -108,7 +120,7 @@ function nodeToTestOutput(node, indent, output) {
                 output.push(_(indent) + '"' + node.nodeValue + '"');
                 break;
             case node.COMMENT_NODE:
-                output.push(_(indent) + '<!--' + node.nodeValue + '-->');
+                output.push(_(indent) + '<!-- ' + node.nodeValue + ' -->');
                 break;
             case node.DOCUMENT_NODE:
                 kids = node.childNodes;
@@ -126,10 +138,6 @@ function nodeToTestOutput(node, indent, output) {
 
 // from dometohtml.js
 function stringifyDoctype (doctype) {
-  if (doctype.ownerDocument && doctype.ownerDocument._fullDT) {
-    return doctype.ownerDocument._fullDT;
-  }
-
   var dt = '<!DOCTYPE ' + doctype.name;
   if (doctype.publicId) {
     // Public ID may never contain double quotes, so this is always safe.
