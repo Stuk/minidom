@@ -417,6 +417,17 @@ var AFTER_HEAD_MODE = {
 
 };
 
+var IN_BODY_MODE = {
+    name: "IN_BODY_MODE",
+
+    // TODO: implement :)
+    onopentag: DEFAULT.onopentag,
+    onclosetag: DEFAULT.onclosetag,
+    ontext: DEFAULT.ontext,
+    onprocessinginstruction: DEFAULT.onprocessinginstruction,
+    oncomment: DEFAULT.oncomment
+};
+
 // Handler.prototype = {
 //     INITIAL_MODE: 1,
 //     BEFORE_HTML_MODE: 2,
