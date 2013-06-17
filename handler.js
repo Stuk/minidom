@@ -86,7 +86,11 @@ var DEFAULT = {
 
         this._currentElement.appendChild(el);
         this._currentElement = el;
-    }
+    },
+
+    onclosetag: function (tagName) {
+        this._currentElement = this._currentElement.parentNode;
+    },
 };
 
 // 12.2.5.4.1 The "initial" insertion mode
@@ -217,6 +221,11 @@ var IN_HEAD_MODE = {
         case "noscript":
             DEFAULT.onopentag.call(this, tagName, attributes);
             this._insertionMode = IN_HEAD_NOSCRIPT_MODE;
+            break;
+        case "script":
+            DEFAULT.onopentag.call(this, tagName, attributes);
+            this._originalInsertionMode = IN_HEAD_MODE;
+            this._insertionMode = TEXT_MODE;
         }
     },
 
@@ -308,6 +317,24 @@ var IN_HEAD_NOSCRIPT_MODE = {
         this[fnName].apply(this, args);
     }
 
+};
+
+var TEXT_MODE = {
+    name: "TEXT_MODE",
+
+    ontext: DEFAULT.ontext,
+
+    onclosetag: function (tagName) {
+        // there is a special case for closing <script> tags, but we don't
+        // need to worry about that as we don't process Javascript
+        DEFAULT.onclosetag.call(this, tagName);
+        this._insertionMode = this._originalInsertionMode;
+        delete this._originalInsertionMode;
+    },
+
+    else: function () {
+        // ignore
+    }
 };
 
 // Handler.prototype = {
