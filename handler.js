@@ -7,6 +7,8 @@ function Handler(document) {
     this._currentElement = document;
     this._insertionMode = INITIAL_MODE;
     this._reset = false;
+
+    this._framesetOk = "ok";
 }
 
 Handler.prototype = {
@@ -348,6 +350,71 @@ var TEXT_MODE = {
     else: function () {
         // ignore
     }
+};
+
+var AFTER_HEAD_MODE = {
+    name: "AFTER_HEAD_MODE",
+
+    ontext: IN_HEAD_MODE.ontext,
+
+    oncomment: DEFAULT.oncomment,
+    onprocessinginstruction: DEFAULT.onprocessinginstruction,
+
+    onopentag: function(tagName, attributes) {
+        switch (tagName) {
+        case "html":
+            IN_BODY_MODE.onopentag.call(this, tagName, attributes);
+        case "body":
+            DEFAULT.onopentag.call(this, tagName, attributes);
+            this._framesetOk = "not ok";
+            this._insertionMode = IN_BODY_MODE;
+            break;
+        case "frameset":
+            DEFAULT.onopentag.call(this, tagName, attributes);
+            this._insertionMode = IN_FRAMESET_MODE;
+            break;
+        case "base":
+        case "basefont":
+        case "bgsound":
+        case "link":
+        case "meta":
+        case "noframes":
+        case "script":
+        case "style":
+        case "title":
+            this.document.raise("error", tagName + " not allowed in between head and body");
+            // TODO reprocess using IN_HEAD_MODE
+            break;
+        case "head":
+            this.document.raise("error", "Stray head tag");
+            // ignore
+            break;
+        default:
+            this.else("onopentag", arguments);
+
+        }
+    },
+
+    onendtag: function (tagName) {
+        switch (tagName) {
+            case "body":
+            case "html":
+            case "br":
+                this.else("onendtag", [tagName]);
+                break;
+            default:
+                this.document.raise("error", tagName + " closing tag not allowed in between head and body");
+                // ignore
+        }
+    },
+
+    else: function (fnName, args) {
+        this._framesetOk = "ok";
+        this.onopentag("body");
+        // reprocess
+        this[fnName].apply(this, args);
+    }
+
 };
 
 // Handler.prototype = {
