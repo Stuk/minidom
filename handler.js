@@ -193,17 +193,20 @@ var IN_HEAD_MODE = {
 
     onprocessinginstruction: DEFAULT.onprocessinginstruction,
     onopentag: function(tagName, attributes) {
-        if (tagName === "html") {
+        switch (tagName) {
+        case "html":
             return IN_BODY_MODE.onopentag.call(this, tagName, attributes);
         // TODO "A start tag whose tag name is one of: "base", "basefont", "bgsound", "link""
-        } else if (tagName === "meta") {
+        case "meta":
             DEFAULT.onopentag.call(this, tagName, attributes);
             // "Immediately pop the current node off the stack of open elements."
             this._currentElement = this._currentElement.parentNode;
             // TODO character encoding
-        } else if (tagName === "title") {
+            break;
+        case "title":
             DEFAULT.onopentag.call(this, tagName, attributes);
             this._insertionMode = NON_SPEC_TITLE_MODE;
+            break;
         }
     },
 
