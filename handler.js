@@ -10,6 +10,36 @@ function Handler(document) {
 }
 
 Handler.prototype = {
+
+    // Because we don't implement the tokenizer ourselves we can't follow these
+    // algorithms, which require switching the tokenizer to RAWTEXT or RCDATA
+    // states.
+    //
+    // For the moment this ignores anything that isn't text.
+    // TODO 1a: Stringify anything that isn't text, like tags, comments, etc.
+    // TODO 1b: Capture the start position of the tokenizer when entering this
+    // mode, then capture the position at the close title tag, grab the contents
+    // of the input string between these two locations and insert directly.
+    // TODO 2: Implement our own tokenizer so that we can follow the spec
+    // accurately.
+    genericRawTextElementParsingAlgorithm: function (tagName, attributes) {
+        DEFAULT.onopentag.call(this, tagName, attributes);
+        // TODO switch the tokenizer to the RAWTEXT state
+        // Needed due to lack of RAWTEXT state
+        this._openingTag = tagName;
+        this._originalInsertionMode = this._insertionMode;
+        this._insertionMode = TEXT_MODE;
+    },
+
+    genericRcdataElementParsingAlgorithm: function (tagName, attributes) {
+        DEFAULT.onopentag.call(this, tagName, attributes);
+        // TODO switch the tokenizer to the RCDATA state
+        // Needed due to lack of RCDATA state
+        this._openingTag = tagName;
+        this._originalInsertionMode = this._insertionMode;
+        this._insertionMode = TEXT_MODE;
+    },
+
     onerror: function (error) {
         throw error;
     },
@@ -209,14 +239,11 @@ var IN_HEAD_MODE = {
             // TODO character encoding
             break;
         case "title":
-            DEFAULT.onopentag.call(this, tagName, attributes);
-            this._insertionMode = NON_SPEC_TITLE_MODE;
+            this.genericRcdataElementParsingAlgorithm(tagName, attributes);
             break;
         case "noframes":
         case "style":
-            // TODO switch to generic raw text element parsing algorithm
-            // style is parsed by htmlparser2 as text
-            DEFAULT.onopentag.call(this, tagName, attributes);
+            this.genericRawTextElementParsingAlgorithm(tagName, attributes);
             break;
         case "noscript":
             DEFAULT.onopentag.call(this, tagName, attributes);
@@ -226,6 +253,7 @@ var IN_HEAD_MODE = {
             DEFAULT.onopentag.call(this, tagName, attributes);
             this._originalInsertionMode = IN_HEAD_MODE;
             this._insertionMode = TEXT_MODE;
+            break;
         case "head":
             this.document.raise("error", "Cannot open head in head");
             // ignore
@@ -245,42 +273,6 @@ var IN_HEAD_MODE = {
         this.onclosetag("head");
         // reprocess
         this[fnName].apply(this, args);
-    }
-
-};
-
-
-// Because we don't implement the tokenizer ourselves we can't follow the
-// "generic RCDATA element parsing algorithm" which requires switching the
-// tokenizer to "RCDATA state".
-//
-// For the moment this ignores anything that isn't text.
-// TODO 1a: Stringify anything that isn't text, like tags, comments, etc.
-// TODO 1b: Capture the start position of the tokenizer when entering this
-// mode, then capture the position at the close title tag, grab the contents
-// of the input string between these two locations and insert directly.
-// TODO 2: Implement our own tokenizer so that we can follow the spec
-// accurately.
-var NON_SPEC_TITLE_MODE = {
-    name: "NON_SPEC_TITLE_MODE",
-
-    onclosetag: function (tagName) {
-        if (tagName === "title") {
-            DEFAULT.ontext.call(this, this._titleTextBuffer);
-            delete this._titleTextBuffer;
-            this._insertionMode = IN_HEAD_MODE;
-        }
-    },
-
-    ontext: function (text) {
-        if (!this._titleTextBuffer) {
-            this._titleTextBuffer = "";
-        }
-        this._titleTextBuffer += text;
-    },
-
-    else: function () {
-        // ignore
     }
 
 };
@@ -337,6 +329,15 @@ var TEXT_MODE = {
     ontext: DEFAULT.ontext,
 
     onclosetag: function (tagName) {
+        // Because of our lack for RAWTEXT and RCDATA states, other tags might
+        // have been opened.
+        var openingTagName = this._openingTag;
+        if (openingTagName && tagName !== openingTagName) {
+            return;
+        } else {
+            delete this._openingTag;
+        }
+
         // there is a special case for closing <script> tags, but we don't
         // need to worry about that as we don't process Javascript
         DEFAULT.onclosetag.call(this, tagName);
