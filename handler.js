@@ -226,13 +226,25 @@ var IN_HEAD_MODE = {
             DEFAULT.onopentag.call(this, tagName, attributes);
             this._originalInsertionMode = IN_HEAD_MODE;
             this._insertionMode = TEXT_MODE;
+        case "head":
+            this.document.raise("error", "Cannot open head in head");
+            // ignore
         }
     },
 
     onclosetag: function (tagName) {
-        if (tagName !== "meta") {
-            this.else("onclosetag", tagName);
+        if (tagName === "head") {
+            DEFAULT.onclosetag.call(this, tagName);
+            this._insertionMode = AFTER_HEAD_MODE;
+        } else if (tagName !== "meta") {
+            this.else("onclosetag", [tagName]);
         }
+    },
+
+    else: function (fnName, args) {
+        this.onclosetag("head");
+        // reprocess
+        this[fnName].apply(this, args);
     }
 
 };
