@@ -202,7 +202,8 @@ var IN_HEAD_MODE = {
             this._currentElement = this._currentElement.parentNode;
             // TODO character encoding
         } else if (tagName === "title") {
-
+            DEFAULT.onopentag.call(this, tagName, attributes);
+            this._insertionMode = NON_SPEC_TITLE_MODE;
         }
     },
 
@@ -215,8 +216,40 @@ var IN_HEAD_MODE = {
 };
 
 
-// States
+// Because we don't implement the tokenizer ourselves we can't follow the
+// "generic RCDATA element parsing algorithm" which requires switching the
+// tokenizer to "RCDATA state".
+//
+// For the moment this ignores anything that isn't text.
+// TODO 1a: Stringify anything that isn't text, like tags, comments, etc.
+// TODO 1b: Capture the start position of the tokenizer when entering this
+// mode, then capture the position at the close title tag, grab the contents
+// of the input string between these two locations and insert directly.
+// TODO 2: Implement our own tokenizer so that we can follow the spec
+// accurately.
+var NON_SPEC_TITLE_MODE = {
+    name: "NON_SPEC_TITLE_MODE",
 
+    onclosetag: function (tagName) {
+        if (tagName === "title") {
+            DEFAULT.ontext.call(this, this._titleTextBuffer);
+            delete this._titleTextBuffer;
+            this._insertionMode = IN_HEAD_MODE;
+        }
+    },
+
+    ontext: function (text) {
+        if (!this._titleTextBuffer) {
+            this._titleTextBuffer = "";
+        }
+        this._titleTextBuffer += text;
+    },
+
+    else: function () {
+        // ignore
+    }
+
+};
 
 
 // Handler.prototype = {
