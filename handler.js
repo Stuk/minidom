@@ -208,6 +208,15 @@ var IN_HEAD_MODE = {
             DEFAULT.onopentag.call(this, tagName, attributes);
             this._insertionMode = NON_SPEC_TITLE_MODE;
             break;
+        case "noframes":
+        case "style":
+            // TODO switch to generic raw text element parsing algorithm
+            // style is parsed by htmlparser2 as text
+            DEFAULT.onopentag.call(this, tagName, attributes);
+            break;
+        case "noscript":
+            DEFAULT.onopentag.call(this, tagName, attributes);
+            this._insertionMode = IN_HEAD_NOSCRIPT_MODE;
         }
     },
 
@@ -255,6 +264,51 @@ var NON_SPEC_TITLE_MODE = {
 
 };
 
+var IN_HEAD_NOSCRIPT_MODE = {
+    name: "IN_HEAD_NOSCRIPT_MODE",
+
+    onprocessinginstruction: DEFAULT.onprocessinginstruction,
+    oncomment: IN_HEAD_MODE.oncomment,
+    ontext: IN_HEAD_MODE.ontext,
+
+    onopentag: function(tagName, attributes) {
+        switch (tagName) {
+        case "html":
+            return IN_BODY_MODE.onopentag.call(this, tagName, attributes);
+        case "basefont":
+        case "bgsound":
+        case "link":
+        case "meta":
+        case "noframes":
+        case "style":
+            IN_HEAD_MODE.onopentag.call(this, tagName, attributes);
+            break;
+        case "head":
+        case "noscript":
+            this.document.raise("error", "Stray " + tagName + " in noscript");
+            // ignore
+            break;
+        }
+    },
+
+    onendtag: function (tagName) {
+        if (tagName === "noscript") {
+            this._currentElement = this._currentElement.parentNode;
+            this._insertionMode = IN_HEAD_MODE;
+        } else {
+            this.else("onendtag", [tagName]);
+        }
+    },
+
+    else: function (fnName, args) {
+        // subtring to remove "on"
+        this.document.raise("error", "Unexpected " + fnName.subtring(2) + " in noscript", args);
+        this.onendtag("noscript");
+        // reprocess
+        this[fnName].apply(this, args);
+    }
+
+};
 
 // Handler.prototype = {
 //     INITIAL_MODE: 1,
