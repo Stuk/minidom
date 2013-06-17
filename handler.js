@@ -95,7 +95,7 @@ var INITIAL_MODE = {
 
     ontext: function (text) {
         // only ignore whitespace text
-        if (text.trim() !== text) {
+        if (text.trim() !== "") {
             this.else("ontext", [text]);
         }
     },
@@ -186,7 +186,8 @@ var IN_HEAD_MODE = {
     name: "IN_HEAD_MODE",
 
     ontext: function (text) {
-        if (text.trim() === text) {
+        // only insert whitespace text
+        if (text.trim() === "") {
             DEFAULT.ontext.call(this, text);
         } // TODO else
     },
