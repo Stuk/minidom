@@ -17,7 +17,8 @@ describe("minidom", function () {
     describe("textContent", function () {
 
         it("returns the text", function () {
-            var doc = minidom("<html><head>pass</head><body>pass</body></html>");
+            var doc = minidom("<html><body>pass<p>pass</p></body></html>");
+            console.log(doc.documentElement.innerHTML);
             expect(doc.children[0].textContent).toEqual("passpass");
         });
 

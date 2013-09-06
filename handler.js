@@ -71,7 +71,7 @@ Handler.prototype = {
     "oncomment", "oncdatastart"
 ].forEach(function (fnName) {
     Handler.prototype[fnName] = function () {
-        console.log(this._insertionMode.name, fnName, arguments);
+        // console.log(this._insertionMode.name, fnName, arguments);
         var modeFn, elseFn;
         if ((modeFn = this._insertionMode[fnName])) {
             modeFn.apply(this, arguments);
